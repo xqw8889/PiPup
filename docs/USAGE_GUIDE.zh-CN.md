@@ -129,6 +129,132 @@ curl -X POST "http://<电视IP>:7979/notify" \
   }'
 ```
 
+### 完整样式与按钮
+
+以下 JSON 示例展示 `/notify` 的全部顶层字段。回调地址中的令牌应由接收端验证。
+
+```bash
+curl -X POST "http://<电视IP>:7979/notify" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "garage-alert",
+    "duration": 45,
+    "position": "BottomLeft",
+    "backgroundColor": "#E6142030",
+    "title": "车库提醒",
+    "titleSize": 22,
+    "titleColor": "#FFCC00",
+    "message": "车库门已打开，请确认。",
+    "messageSize": 16,
+    "messageColor": "#FFFFFF",
+    "tts": "车库门已打开，请确认。",
+    "ttsLanguage": "zh-CN",
+    "urgency": "warning",
+    "showProgress": true,
+    "buttons": [
+      { "id": "close", "label": "关闭车库门" },
+      { "id": "ignore", "label": "忽略" }
+    ],
+    "callback": "http://<自动化服务IP>:8123/api/webhook/pipup-button?token=<随机令牌>"
+  }'
+```
+
+JSON 请求的位置值为 `TopRight`、`TopLeft`、`BottomRight`、`BottomLeft` 或 `Center`。
+
+确认键会向 `callback` 发送以下 JSON，并关闭弹窗：
+
+```json
+{
+  "popup": "garage-alert",
+  "button": "close",
+  "label": "关闭车库门",
+  "device": "<电视设备ID>",
+  "name": "<电视设备名称>"
+}
+```
+
+### 远程图片
+
+```bash
+curl -X POST "http://<电视IP>:7979/notify" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "包裹已送达",
+    "message": "门口检测到一个包裹",
+    "media": {
+      "image": {
+        "uri": "https://<媒体服务IP>/snapshots/front-door.jpg",
+        "width": 720
+      }
+    }
+  }'
+```
+
+### 远程视频
+
+视频会按 `width` 等比缩放。
+
+```bash
+curl -X POST "http://<电视IP>:7979/notify" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "door-video",
+    "title": "门口回放",
+    "duration": 30,
+    "media": {
+      "video": {
+        "uri": "https://<媒体服务IP>/clips/doorbell.mp4",
+        "width": 480,
+        "muted": true
+      }
+    }
+  }'
+```
+
+### 上传本地图片
+
+`multipart/form-data` 仅支持名为 `image` 的图片。此格式的位置使用整数：`0` 为右上、`1` 为左上、`2` 为右下、`3` 为左下、`4` 为中央。
+
+```bash
+curl -X POST "http://<电视IP>:7979/notify" \
+  -F "duration=20" \
+  -F "id=package-photo" \
+  -F "position=2" \
+  -F "backgroundColor=#CC000000" \
+  -F "title=包裹照片" \
+  -F "titleSize=18" \
+  -F "titleColor=#FFFFFF" \
+  -F "message=刚刚拍摄" \
+  -F "messageSize=14" \
+  -F "messageColor=#FFFFFF" \
+  -F "tts=门口有新的包裹" \
+  -F "ttsLanguage=zh-CN" \
+  -F "imageWidth=640" \
+  -F "image=@./front-door.jpg"
+```
+
+### 相同弹窗续时
+
+为同一 `id` 发送内容完全相同的 JSON 会保留当前媒体视图，仅重新计算关闭时间。
+
+```bash
+curl -X POST "http://<电视IP>:7979/notify" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "door-camera",
+    "title": "门口摄像头",
+    "duration": 60,
+    "media": {
+      "web": {
+        "uri": "http://<摄像头服务IP>/live",
+        "width": 960,
+        "height": 540,
+        "muted": true
+      }
+    }
+  }'
+```
+
 ## 关闭弹窗
 
 ```bash
@@ -143,6 +269,38 @@ curl "http://<电视IP>:7979/state"
 ```
 
 响应包含应用版本、在线时长、屏幕状态、当前弹窗、最近一次收到的弹窗和设备信息。`visible: true` 表示当前有弹窗显示。
+
+`/state` 同时接受 POST：
+
+```bash
+curl -X POST "http://<电视IP>:7979/state"
+```
+
+```json
+{
+  "app": "PiPup",
+  "version": "0.6.2",
+  "id": "<电视设备ID>",
+  "name": "<电视设备名称>",
+  "visible": true,
+  "screenOn": true,
+  "popupsShown": 12,
+  "watchdogCleanups": 0,
+  "uptime": 86400,
+  "device": { "model": "<型号>", "manufacturer": "<厂商>", "android": "11" },
+  "popup": { "id": "door-camera", "duration": 60, "indefinite": false, "elapsed": 8 },
+  "lastPopup": { "id": "door-camera", "position": "TopRight", "duration": 60, "indefinite": false, "muted": true, "media": { "type": "web", "width": 960, "height": 540 }, "tts": false, "buttons": 0, "secondsAgo": 8 },
+  "update": { "available": false, "latest": null, "installing": false, "checkedSecondsAgo": 120, "error": null }
+}
+```
+
+## 更新应用
+
+请求 PiPup 检查并安装最新可用版本。通过 `/state` 的 `update.installing`、`update.error` 等字段查看进度。
+
+```bash
+curl -X POST "http://<电视IP>:7979/update"
+```
 
 ## 安全说明
 
