@@ -144,14 +144,8 @@ sealed class PopupView(context: Context, val popup: PopupProps) : LinearLayout(c
                     if (media.muted) {
                         it.setVolume(0f, 0f)
                     }
-                    it.setOnVideoSizeChangedListener { _, videoWidth, videoHeight ->
-
-                        // VideoView does not derive a height from WRAP_CONTENT here,
-                        // so calculate it to make the requested width take effect.
-                        val scaledHeight = (media.width.toLong() * videoHeight / videoWidth)
-                            .toInt()
-
-                        layoutParams = FrameLayout.LayoutParams(media.width, scaledHeight).apply {
+                    it.setOnVideoSizeChangedListener { _, _, _ ->
+                        layoutParams = FrameLayout.LayoutParams(media.width, media.height).apply {
                             gravity = Gravity.CENTER
                         }
 

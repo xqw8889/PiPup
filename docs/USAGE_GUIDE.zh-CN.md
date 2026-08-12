@@ -75,7 +75,7 @@ JSON 请求的顶层字段全部可选。发送 `{}` 会以默认样式显示一
 | `media` 内容 | 必填字段 | 可选字段 | 默认值 | 作用 |
 |---|---|---|---|---|
 | `image` | `uri` | `width` | `width: 480` | 显示远程图片。 |
-| `video` | `uri` | `width`、`muted` | `width: 480`、`muted: false` | 播放远程视频。 |
+| `video` | `uri` | `width`、`height`、`muted` | `width: 640`、`height: 480`、`muted: false` | 播放远程视频。 |
 | `web` | `uri` | `width`、`height`、`muted` | `width: 640`、`height: 480`、`muted: false` | 显示网页、直播页或摄像头流页面。 |
 
 ### `buttons` 按钮对象
@@ -192,7 +192,7 @@ curl -X POST "http://<电视IP>:7979/notify" \
 
 ### 远程视频
 
-视频会按 `width` 等比缩放。
+视频使用明确的 `width` 与 `height` 尺寸，与网页媒体的布局方式一致。
 
 ```bash
 curl -X POST "http://<电视IP>:7979/notify" \
@@ -204,7 +204,8 @@ curl -X POST "http://<电视IP>:7979/notify" \
     "media": {
       "video": {
         "uri": "https://<媒体服务IP>/clips/doorbell.mp4",
-        "width": 480,
+        "width": 640,
+        "height": 480,
         "muted": true
       }
     }
