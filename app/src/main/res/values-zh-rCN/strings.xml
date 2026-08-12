@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">PiPup</string>
+    <string name="server_running">服务器正在运行，地址为：</string>
+    <string name="server_address">%1$s:%2$d</string>
+    <string name="no_network_connection">没有网络连接！\n请检查网络设置后重试。</string>
+    <string name="more_information">更多信息请阅读文档：https://github.com/mhoogenbosch/PiPup</string>
+    <string name="service_channel_name">服务</string>
+    <string name="service_notification_text">服务正在运行</string>
+    <string name="status_service_unreachable">服务未运行，请重新打开应用或重启设备</string>
+    <string name="status_last_popup">最近一次弹窗</string>
+    <string name="status_no_popups_yet">尚未收到弹窗</string>
+    <string name="update_available_title">PiPup %1$s 已可用</string>
+    <string name="update_available_message">按确认键立即安装更新。</string>
+    <string name="update_install">安装</string>
+</resources>
