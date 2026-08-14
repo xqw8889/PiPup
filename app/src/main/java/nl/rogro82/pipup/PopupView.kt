@@ -16,6 +16,12 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 
@@ -232,6 +238,7 @@ sealed class PopupView(context: Context, val popup: PopupProps) : LinearLayout(c
 
     private class Web(context: Context, popup: PopupProps, val media: PopupProps.Media.Web): PopupView(context, popup) {
         private var mWebView: WebView? = null
+        private var mHlsPlayer: ExoPlayer? = null
 
         init { create() }
 
@@ -240,6 +247,11 @@ sealed class PopupView(context: Context, val popup: PopupProps) : LinearLayout(c
             super.create()
 
             val frame = findViewById<FrameLayout>(R.id.popup_frame)
+            if (Uri.parse(media.uri).path?.endsWith(".m3u8", ignoreCase = true) == true) {
+                createHlsPlayer(frame)
+                return
+            }
+
             val webView = WebView(context).apply {
                 with(settings) {
                     loadWithOverviewMode = true
@@ -274,6 +286,33 @@ sealed class PopupView(context: Context, val popup: PopupProps) : LinearLayout(c
             frame.addView(webView, layoutParams)
         }
 
+        private fun createHlsPlayer(frame: FrameLayout) {
+            val playerView = PlayerView(context).apply {
+                useController = false
+                layoutParams = FrameLayout.LayoutParams(media.width, media.height).apply {
+                    gravity = Gravity.CENTER
+                }
+            }
+
+            mHlsPlayer = ExoPlayer.Builder(context).build().apply {
+                if (media.muted) {
+                    trackSelectionParameters = trackSelectionParameters.buildUpon()
+                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
+                        .build()
+                }
+                addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        Log.e(LOG_TAG, "HLS playback failed for ${media.uri}", error)
+                    }
+                })
+                setMediaItem(MediaItem.fromUri(media.uri))
+                playWhenReady = true
+                prepare()
+            }
+            playerView.player = mHlsPlayer
+            frame.addView(playerView)
+        }
+
         override fun destroy() {
             super.destroy()
             try {
@@ -282,6 +321,10 @@ sealed class PopupView(context: Context, val popup: PopupProps) : LinearLayout(c
                     destroy()
                 }
                 mWebView = null
+            } catch(e: Throwable) {}
+            try {
+                mHlsPlayer?.release()
+                mHlsPlayer = null
             } catch(e: Throwable) {}
         }
     }
